@@ -145,13 +145,25 @@
   hosts: all
   become: true
   tasks:
-    - name: Set password policies
-      pam_loginuid:
-        name: password
-        set_password_max_days: 90
-        set_password_min_days: 7
-        set_password_warn_age: 14
+    - name: Install pam_pwquality package
+       apt:
+        name: libpam-pwquality
+        state: present
 
+    
+    - name: Set password policies
+        pam_pwquality:
+          name: common-password
+          minlen: 8
+          maxrepeat: 3
+          minclass: 2
+          dcredit: -1
+          ucredit: -1
+          ocredit: -1
+          lcredit: -1
+          enforce_for_root: yes
+      
+      
     - name: Configure centralized logging
       apt:
         name: rsyslog
