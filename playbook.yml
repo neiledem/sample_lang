@@ -1,197 +1,176 @@
-name: Configure Network Security
-hosts: all
-become: true
-tasks:
-name: Harden firewall rules
-  ufw:
-    rule: allow
-    port: "{{ item }}"
-    state: enabled
-  with_items:
-22 # SSH
-80 # HTTP
-443 # HTTPS
-notify: Restart UFW
+- name: Configure Network Security
+  hosts: all
+  become: true
+  tasks:
+    - name: Harden firewall rules
+      ufw:
+        rule: allow
+        port: "{{ item }}"
+        state: enabled
+      with_items:
+        - 22 # SSH
+        - 80 # HTTP
+        - 443 # HTTPS
+      notify: Restart UFW
 
-    
-name: Install and configure IDS/IPS
-    apt:
-      name: snort
-      state: present
-    notify: Restart Snort
-
-  handlers:
-    
-name: Restart UFW
-    service:
-      name: ufw
-      state: restarted
-
-    
-name: Restart Snort
-    service:
-      name: snort
-      state: restarted
-
-name: Configure Communication Security
-hosts: all
-become: true
-tasks:
-name: Install SSL/TLS certificates
-  apt:
-    name: "{{ item }}"
-    state: present
-  with_items:
-openssl
-ssl-cert
-
-    
-name: Enable HTTPS for Apache
-    apache2_module:
-      name: ssl
-      state: present
-    notify: Restart Apache
-
-    
-name: Restrict ciphers for SSL/TLS
-    lineinfile:
-      path: /etc/apache2/mods-available/ssl.conf
-      regexp: '^SSLCipherSuite'
-      line: 'SSLCipherSuite HIGH:!aNULL:!MD5:!3DES:!CAMELLIA:!AES128'
-    notify: Restart Apache
+    - name: Install and configure IDS/IPS
+      apt:
+        name: snort
+        state: present
+      notify: Restart Snort
 
   handlers:
-    
-name: Restart Apache
-    service:
-      name: apache2
-      state: restarted
+    - name: Restart UFW
+      service:
+        name: ufw
+        state: restarted
 
-name: Configure Network Services
-hosts: all
-become: true
-tasks:
-name: Update system packages
-  apt:
-    upgrade: safe
-    update_cache: yes
+    - name: Restart Snort
+      service:
+        name: snort
+        state: restarted
 
-    
-name: Install and configure fail2ban
-    apt:
-      name: fail2ban
-      state: present
-    notify: Restart Fail2ban
+- name: Configure Communication Security
+  hosts: all
+  become: true
+  tasks:
+    - name: Install SSL/TLS certificates
+      apt:
+        name: "{{ item }}"
+        state: present
+      with_items:
+        - openssl
+        - ssl-cert
 
-    
-name: Set SSH protocol to version 2
-    lineinfile:
-      path: /etc/ssh/sshd_config
-      regexp: '^#?Protocol'
-      line: 'Protocol 2'
-    notify: Restart SSH
+    - name: Enable HTTPS for Apache
+      apache2_module:
+        name: ssl
+        state: present
+      notify: Restart Apache
 
-  handlers:
-    
-name: Restart Fail2ban
-    service:
-      name: fail2ban
-      state: restarted
-
-    
-name: Restart SSH
-    service:
-      name: ssh
-      state: restarted
-
-name: Configure Endpoint Security
-hosts: all
-become: true
-tasks:
-name: Install and configure ClamAV
-  apt:
-    name: clamav
-    state: present
-  notify: Update ClamAV
-
-    
-name: Enable automatic security updates
-    apt:
-      name: unattended-upgrades
-      state: present
-    notify: Restart Unattended Upgrades
-
-    
-name: Install and configure host-based firewall
-    apt:
-      name: ufw
-      state: present
-    notify: Restart UFW
-
-    
-name: Enable AppArmor
-    apt:
-      name: apparmor
-      state: present
-    notify: Restart AppArmor
+    - name: Restrict ciphers for SSL/TLS
+      lineinfile:
+        path: /etc/apache2/mods-available/ssl.conf
+        regexp: '^SSLCipherSuite'
+        line: 'SSLCipherSuite HIGH:!aNULL:!MD5:!3DES:!CAMELLIA:!AES128'
+      notify: Restart Apache
 
   handlers:
-    
-name: Update ClamAV
-    command: freshclam
+    - name: Restart Apache
+      service:
+        name: apache2
+        state: restarted
 
-    
-name: Restart Unattended Upgrades
-    service:
-      name: unattended-upgrades
-      state: restarted
+- name: Configure Network Services
+  hosts: all
+  become: true
+  tasks:
+    - name: Update system packages
+      apt:
+        upgrade: safe
+        update_cache: yes
 
-    
-name: Restart UFW
-    service:
-      name: ufw
-      state: restarted
+    - name: Install and configure fail2ban
+      apt:
+        name: fail2ban
+        state: present
+      notify: Restart Fail2ban
 
-    
-name: Restart AppArmor
-    service:
-      name: apparmor
-      state: restarted
-
-name: Configure Security Policies
-hosts: all
-become: true
-tasks:
-name: Set password policies
-  pam_loginuid:
-    name: password
-    set_password_max_days: 90
-    set_password_min_days: 7
-    set_password_warn_age: 14
-
-    
-name: Configure centralized logging
-    apt:
-      name: rsyslog
-      state: present
-    notify: Restart Rsyslog
-
-    
-name: Enable system auditing
-    apt:
-      name: auditd
-      state: present
-    notify: Restart Auditd
+    - name: Set SSH protocol to version 2
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^#?Protocol'
+        line: 'Protocol 2'
+      notify: Restart SSH
 
   handlers:
-    
-name: Restart Rsyslog
-    service:
-      name: rsyslog
-      state: restarted
+    - name: Restart Fail2ban
+      service:
+        name: fail2ban
+        state: restarted
 
-    
-name: Restart Auditd
-    service:
-      name: auditd
-      state: restarted
+    - name: Restart SSH
+      service:
+        name: ssh
+        state: restarted
+
+- name: Configure Endpoint Security
+  hosts: all
+  become: true
+  tasks:
+    - name: Install and configure ClamAV
+      apt:
+        name: clamav
+        state: present
+      notify: Update ClamAV
+
+    - name: Enable automatic security updates
+      apt:
+        name: unattended-upgrades
+        state: present
+      notify: Restart Unattended Upgrades
+
+    - name: Install and configure host-based firewall
+      apt:
+        name: ufw
+        state: present
+      notify: Restart UFW
+
+    - name: Enable AppArmor
+      apt:
+        name: apparmor
+        state: present
+      notify: Restart AppArmor
+
+  handlers:
+    - name: Update ClamAV
+      command: freshclam
+
+    - name: Restart Unattended Upgrades
+      service:
+        name: unattended-upgrades
+        state: restarted
+
+    - name: Restart UFW
+      service:
+        name: ufw
+        state: restarted
+
+    - name: Restart AppArmor
+      service:
+        name: apparmor
+        state: restarted
+
+- name: Configure Security Policies
+  hosts: all
+  become: true
+  tasks:
+    - name: Set password policies
+      pam_loginuid:
+        name: password
+        set_password_max_days: 90
+        set_password_min_days: 7
+        set_password_warn_age: 14
+
+    - name: Configure centralized logging
+      apt:
+        name: rsyslog
+        state: present
+      notify: Restart Rsyslog
+
+    - name: Enable system auditing
+      apt:
+        name: auditd
+        state: present
+      notify: Restart Auditd
+
+  handlers:
+    - name: Restart Rsyslog
+      service:
+        name: rsyslog
+        state: restarted
+
+    - name: Restart Auditd
+      service:
+        name: auditd
+        state: restarted
